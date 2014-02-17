@@ -1,0 +1,110 @@
+<html>
+<head>
+<title>Electronics Calculator - Find Resistor</title>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+    tex2jax: {inlineMath: [['$$','$$'], ['\\(','\\)']]}
+});
+</script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<!--
+<script type="text/javascript" src="jquery-1.5.2.js"></script>
+<script type="text/javascript" src="mathjax-MathJax-5a7e4d7/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+-->
+<script type="text/javascript" src="functional.min.js"></script>
+<script type="text/javascript" src="electronics-calculator.js"></script>
+<script type="text/javascript">
+jQuery(document).ready(function() {
+    var electronics = new Electronics()
+    var resistorCalculator = new ResistorCalculator()
+    var ohmsLaw = new OhmsLaw()
+
+    var inputR = jQuery("#r")
+    var inputU = jQuery("#u")
+    var inputI = jQuery("#i")
+
+    var closestLower = jQuery(".closest-lower")
+    var closestHigher = jQuery(".closest-higher")
+    var closestVoltage = jQuery("#closest-voltage")
+    var closestCurrent = jQuery("#closest-current")
+    var closestLowerVoltage = jQuery("#closest-lower-voltage")
+    var closestLowerCurrent = jQuery("#closest-lower-current")
+    var closestHigherVoltage = jQuery("#closest-higher-voltage")
+    var closestHigherCurrent = jQuery("#closest-higher-current")
+
+    var updateFields = function() {
+        r = electronics.parseR(inputR.val())
+        u = electronics.parseV(inputU.val())
+        i = electronics.parseA(inputI.val())
+        if(isNaN(r)) {
+            return
+        }
+
+        var closest = resistorCalculator.findClosest(r)
+        var l = closest[0]
+        var h = closest[1]
+        closestLower.html(electronics.printResistance(l))
+        closestHigher.html(electronics.printResistance(h))
+
+        if(!isNaN(i)) {
+            closestCurrent.html(electronics.printAmpere(i))
+            closestLowerVoltage.html(electronics.printVoltage(ohmsLaw.solve("u", 0, l, i)["u"]))
+            closestHigherVoltage.html(electronics.printVoltage(ohmsLaw.solve("u", 0, h, i)["u"]))
+        }
+
+        if(!isNaN(u)) {
+            closestVoltage.html(electronics.printVoltage(u))
+            closestLowerCurrent.html(electronics.printAmpere(ohmsLaw.solve("i", u, l, 0)["i"]))
+            closestHigherCurrent.html(electronics.printAmpere(ohmsLaw.solve("i", u, h, 0)["i"]))
+        }
+
+        jQuery(".update-mathjax").each(function(i, e) { MathJax.Hub.Queue(["Typeset", MathJax.Hub, e]) } )
+    }
+
+    inputR.keyup(updateFields)
+    inputU.keyup(updateFields)
+    inputI.keyup(updateFields)
+
+    // Load the form from the query
+    r = electronics.queryParams["r"]
+    u = electronics.queryParams["u"]
+    i = electronics.queryParams["i"]
+    if(!isNaN(r)) inputR.val(r)
+    if(!isNaN(u)) inputU.val(u)
+    if(!isNaN(i)) inputI.val(i)
+
+    updateFields()
+})
+</script>
+</head>
+<body>
+<h1>Find Best Resistor</h1>
+<form>
+The target resistance: <input id="r" name="r" value="105"/>&Omega;<br/>
+<ul>
+    <li>Closest lower: <span class="update-mathjax closest-lower">-</span></li>
+    <li>Closest higher: <span class="update-mathjax closest-higher">-</span></li>
+</ul>
+Resistor table: E12
+<hr/>
+<p>
+If you know the voltage over the resistor, calculate the current:
+</p>
+\(U\)=<input id="u" name="u" value="5"/>V
+<ul>
+    <li><span id="closest-lower-current" class="update-mathjax">-</span> at <span class="update-mathjax closest-lower">-</span></li>
+    <li><span id="closest-higher-current" class="update-mathjax">-</span> at <span class="update-mathjax closest-higher">-</span></li>
+</ul>
+<hr/>
+<p>
+If you know the current through the resistor, calculate the voltage drop:
+</p>
+\(I\)=<input id="i" name="i"/>A
+<ul>
+    <li><span id="closest-lower-voltage" class="update-mathjax">-</span> at <span class="update-mathjax closest-lower">-</span></li>
+    <li><span id="closest-higher-voltage" class="update-mathjax">-</span> at <span class="update-mathjax closest-higher">-</span></li>
+</ul>
+</form>
+</body>
+</html>
